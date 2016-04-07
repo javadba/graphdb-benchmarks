@@ -12,11 +12,15 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import com.google.common.base.Stopwatch;
+import com.google.common.collect.Lists;
+import com.thinkaurelius.titan.diskstorage.Backend;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.MapConfiguration;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tinkerpop.gremlin.process.traversal.P;
 import org.apache.tinkerpop.gremlin.process.traversal.Path;
+import org.apache.tinkerpop.gremlin.process.traversal.Scope;
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversal;
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversalSource;
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__;
@@ -26,15 +30,15 @@ import org.apache.tinkerpop.gremlin.structure.Property;
 import org.apache.tinkerpop.gremlin.structure.T;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
 
-import com.amazon.titan.diskstorage.dynamodb.BackendDataModel;
-import com.amazon.titan.diskstorage.dynamodb.Client;
-import com.amazon.titan.diskstorage.dynamodb.Constants;
-import com.amazon.titan.diskstorage.dynamodb.DynamoDBSingleRowStore;
-import com.amazon.titan.diskstorage.dynamodb.DynamoDBStore;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
-import com.amazonaws.services.dynamodbv2.model.CreateTableRequest;
-import com.amazonaws.services.dynamodbv2.model.ResourceInUseException;
+//import com.amazon.titan.diskstorage.dynamodb.BackendDataModel;
+//import com.amazon.titan.diskstorage.dynamodb.Client;
+//import com.amazon.titan.diskstorage.dynamodb.Constants;
+//import com.amazon.titan.diskstorage.dynamodb.DynamoDBSingleRowStore;
+//import com.amazon.titan.diskstorage.dynamodb.DynamoDBStore;
+//import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+//import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
+//import com.amazonaws.services.dynamodbv2.model.CreateTableRequest;
+//import com.amazonaws.services.dynamodbv2.model.ResourceInUseException;
 import com.google.common.collect.Iterators;
 import com.thinkaurelius.titan.core.Multiplicity;
 import com.thinkaurelius.titan.core.PropertyKey;
@@ -63,6 +67,12 @@ import static org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTrav
  */
 public class TitanGraphDatabase extends GraphDatabaseBase<Iterator<Vertex>, Iterator<Edge>, Vertex, Edge>
 {
+    public static final ArrayList<String> BACKEND_REQUIRED_STORES = Lists.newArrayList(Backend.EDGESTORE_NAME, //
+            Backend.INDEXSTORE_NAME, //
+            Backend.ID_STORE_NAME, //
+            Backend.SYSTEM_TX_LOG_NAME, //
+            Backend.SYSTEM_MGMT_LOG_NAME, //
+            GraphDatabaseConfiguration.SYSTEM_PROPERTIES_STORE_NAME);
     private static final Logger LOG = LogManager.getLogger();
     public static final String INSERTION_TIMES_OUTPUT_PATH = "data/titan.insertion.times";
 
@@ -170,8 +180,8 @@ public class TitanGraphDatabase extends GraphDatabaseBase<Iterator<Vertex>, Iter
         else if (GraphDatabaseType.TITAN_DYNAMODB == type)
         {
             final Configuration dynamodb = storage.subset("dynamodb");
-            final Configuration client = dynamodb.subset(Constants.DYNAMODB_CLIENT_NAMESPACE.getName());
-            final Configuration credentials = client.subset(Constants.DYNAMODB_CLIENT_CREDENTIALS_NAMESPACE.getName());
+            final Configuration client = dynamodb.subset("client");
+            final Configuration credentials = client.subset("credentials");
             if (bench.getDynamodbDataModel() == null)
             {
                 throw new IllegalArgumentException("data model must be set for dynamodb benchmarking");
@@ -179,8 +189,8 @@ public class TitanGraphDatabase extends GraphDatabaseBase<Iterator<Vertex>, Iter
             if (GraphDatabaseType.TITAN_DYNAMODB == type && bench.getDynamodbEndpoint() != null
                 && !bench.getDynamodbEndpoint().isEmpty())
             {
-                client.addProperty(Constants.DYNAMODB_CLIENT_ENDPOINT.getName(), bench.getDynamodbEndpoint());
-                client.addProperty(Constants.DYNAMODB_CLIENT_MAX_CONN.getName(), bench.getDynamodbWorkerThreads());
+                client.addProperty("endpoint", bench.getDynamodbEndpoint());
+                client.addProperty("connection-max", bench.getDynamodbWorkerThreads());
             } else {
                 throw new IllegalArgumentException("require endpoint");
             }
@@ -188,34 +198,34 @@ public class TitanGraphDatabase extends GraphDatabaseBase<Iterator<Vertex>, Iter
             if (bench.getDynamodbCredentialsFqClassName() != null
                 && !bench.getDynamodbCredentialsFqClassName().isEmpty())
             {
-                credentials.addProperty(Constants.DYNAMODB_CREDENTIALS_CLASS_NAME.getName(), bench.getDynamodbCredentialsFqClassName());
+                credentials.addProperty("class-name", bench.getDynamodbCredentialsFqClassName());
             }
 
             if (bench.getDynamodbCredentialsCtorArguments() != null)
             {
-                credentials.addProperty(Constants.DYNAMODB_CREDENTIALS_CONSTRUCTOR_ARGS.getName(),
+                credentials.addProperty("constructor-args",
                     bench.getDynamodbCredentialsCtorArguments());
             }
 
-            dynamodb.addProperty(Constants.DYNAMODB_FORCE_CONSISTENT_READ.getName(), bench.dynamodbConsistentRead());
-            Configuration executor = client.subset(Constants.DYNAMODB_CLIENT_EXECUTOR_NAMESPACE.getName());
-            executor.addProperty(Constants.DYNAMODB_CLIENT_EXECUTOR_CORE_POOL_SIZE.getName(), bench.getDynamodbWorkerThreads());
-            executor.addProperty(Constants.DYNAMODB_CLIENT_EXECUTOR_MAX_POOL_SIZE.getName(), bench.getDynamodbWorkerThreads());
-            executor.addProperty(Constants.DYNAMODB_CLIENT_EXECUTOR_KEEP_ALIVE.getName(), TimeUnit.MINUTES.toMillis(1));
-            executor.addProperty(Constants.DYNAMODB_CLIENT_EXECUTOR_QUEUE_MAX_LENGTH.getName(), bench.getTitanBufferSize());
+            dynamodb.addProperty("force-consistent-read", bench.dynamodbConsistentRead());
+            Configuration executor = client.subset("executor");
+            executor.addProperty("core-pool-size", bench.getDynamodbWorkerThreads());
+            executor.addProperty("max-pool-size", bench.getDynamodbWorkerThreads());
+            executor.addProperty("keep-alive", TimeUnit.MINUTES.toMillis(1));
+            executor.addProperty("max-queue-length", bench.getTitanBufferSize());
 
             final long writeTps = bench.getDynamodbTps();
             final long readTps = Math.max(1, bench.dynamodbConsistentRead() ? writeTps : writeTps / 2);
 
-            final Configuration stores = dynamodb.subset(Constants.DYNAMODB_STORES_NAMESPACE.getName());
-            for (String storeName : Constants.REQUIRED_BACKEND_STORES)
+            final Configuration stores = dynamodb.subset("stores");
+            for (String storeName :  BACKEND_REQUIRED_STORES)
             {
                 final Configuration store = stores.subset(storeName);
-                store.addProperty(Constants.STORES_DATA_MODEL.getName(), bench.getDynamodbDataModel().name());
-                store.addProperty(Constants.STORES_CAPACITY_READ.getName(), readTps);
-                store.addProperty(Constants.STORES_CAPACITY_WRITE.getName(), writeTps);
-                store.addProperty(Constants.STORES_READ_RATE_LIMIT.getName(), readTps);
-                store.addProperty(Constants.STORES_WRITE_RATE_LIMIT.getName(), writeTps);
+                store.addProperty("data-model", bench.getDynamodbDataModel());
+                store.addProperty("capacity-read", readTps);
+                store.addProperty("capacity-write", writeTps);
+                store.addProperty("read-rate", readTps);
+                store.addProperty("write-rate", writeTps);
             }
         }
         return (StandardTitanGraph) TitanFactory.open(conf);
@@ -224,33 +234,34 @@ public class TitanGraphDatabase extends GraphDatabaseBase<Iterator<Vertex>, Iter
     private StandardTitanGraph open(boolean batchLoading)
     {
         //if using DynamoDB Storage Backend for Titan, prep the tables in parallel
-        if(type == GraphDatabaseType.TITAN_DYNAMODB && config.getDynamodbPrecreateTables()) {
-            List<CreateTableRequest> requests = new LinkedList<>();
-            long wcu = config.getDynamodbTps();
-            long rcu = Math.max(1, config.dynamodbConsistentRead() ? wcu : (wcu / 2));
-            for(String store : Constants.REQUIRED_BACKEND_STORES) {
-                final String tableName = config.getDynamodbTablePrefix() + "_" + store;
-                if(BackendDataModel.MULTI == config.getDynamodbDataModel()) {
-                    requests.add(DynamoDBStore.createTableRequest(tableName,
-                        rcu, wcu));
-                } else if(BackendDataModel.SINGLE == config.getDynamodbDataModel()) {
-                    requests.add(DynamoDBSingleRowStore.createTableRequest(tableName, rcu, wcu));
-                }
-            }
-            //TODO is this autocloseable?
-            final AmazonDynamoDB client =
-                new AmazonDynamoDBClient(Client.createAWSCredentialsProvider(config.getDynamodbCredentialsFqClassName(),
-                    config.getDynamodbCredentialsCtorArguments() == null ? null : config.getDynamodbCredentialsCtorArguments().split(",")));
-            client.setEndpoint(config.getDynamodbEndpoint());
-            for(CreateTableRequest request : requests) {
-                try {
-                    client.createTable(request);
-                } catch(ResourceInUseException ignore) {
-                    //already created, good
-                }
-            }
-            client.shutdown();
-        }
+        //refactor the following code back into the DynamoDB backend. it needs to be reusable
+//        if(type == GraphDatabaseType.TITAN_DYNAMODB && config.getDynamodbPrecreateTables()) {
+//            List<CreateTableRequest> requests = new LinkedList<>();
+//            long wcu = config.getDynamodbTps();
+//            long rcu = Math.max(1, config.dynamodbConsistentRead() ? wcu : (wcu / 2));
+//            for(String store : Constants.REQUIRED_BACKEND_STORES) {
+//                final String tableName = config.getDynamodbTablePrefix() + "_" + store;
+//                if(BackendDataModel.MULTI == config.getDynamodbDataModel()) {
+//                    requests.add(DynamoDBStore.createTableRequest(tableName,
+//                        rcu, wcu));
+//                } else if(BackendDataModel.SINGLE == config.getDynamodbDataModel()) {
+//                    requests.add(DynamoDBSingleRowStore.createTableRequest(tableName, rcu, wcu));
+//                }
+//            }
+//            //TODO is this autocloseable?
+//            final AmazonDynamoDB client =
+//                new AmazonDynamoDBClient(Client.createAWSCredentialsProvider(config.getDynamodbCredentialsFqClassName(),
+//                    config.getDynamodbCredentialsCtorArguments() == null ? null : config.getDynamodbCredentialsCtorArguments().split(",")));
+//            client.setEndpoint(config.getDynamodbEndpoint());
+//            for(CreateTableRequest request : requests) {
+//                try {
+//                    client.createTable(request);
+//                } catch(ResourceInUseException ignore) {
+//                    //already created, good
+//                }
+//            }
+//            client.shutdown();
+//        }
         return buildTitanGraph(type, dbStorageDirectory, config, batchLoading);
     }
 
@@ -307,11 +318,12 @@ public class TitanGraphDatabase extends GraphDatabaseBase<Iterator<Vertex>, Iter
                 .until(
                         __.has(NODE_ID, targetNode)
                         .and(
-                                __.filter(it -> {
-//when the size of the path in the traverser object is six, that means this traverser made 4 hops from the
-//fromNode, a total of 5 vertices
-                                    return it.path().size() <= 5;
-                                }))
+                                __.path().count(Scope.local).is(P.lte(5)))
+//                                __.filter(it -> {
+////when the size of the path in the traverser object is six, that means this traverser made 4 hops from the
+////fromNode, a total of 5 vertices
+//                                    return it.path().size() <= 5;
+//                                }))
                 )
                 .limit(1)
                 .path();

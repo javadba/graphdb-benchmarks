@@ -11,8 +11,6 @@ import java.util.TreeSet;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.math3.util.CombinatoricsUtils;
 
-import com.amazon.titan.diskstorage.dynamodb.BackendDataModel;
-import com.amazon.titan.diskstorage.dynamodb.Constants;
 import com.google.common.primitives.Ints;
 import com.thinkaurelius.titan.graphdb.configuration.GraphDatabaseConfiguration;
 
@@ -39,13 +37,13 @@ public class BenchmarkConfiguration
     private static final String CUSTOM_IDS = "custom-ids";
 
     // DynamoDB Storage Backend for Titan specific configuration
-    private static final String CONSTRUCTOR_ARGS = Constants.DYNAMODB_CREDENTIALS_CONSTRUCTOR_ARGS.getName();
-    private static final String CLASS_NAME = Constants.DYNAMODB_CREDENTIALS_CLASS_NAME.getName();
-    private static final String CONSISTENT_READ = Constants.DYNAMODB_FORCE_CONSISTENT_READ.getName();
+    private static final String CONSTRUCTOR_ARGS = "constructor-args";
+    private static final String CLASS_NAME = "class-name";
+    private static final String CONSISTENT_READ = "force-consistent-read";
     private static final String TPS = "tps";
-    private static final String CREDENTIALS = Constants.DYNAMODB_CLIENT_CREDENTIALS_NAMESPACE.getName();
-    private static final String ENDPOINT = Constants.DYNAMODB_CLIENT_ENDPOINT.getName();
-    private static final String TABLE_PREFIX = Constants.DYNAMODB_TABLE_PREFIX.getName();
+    private static final String CREDENTIALS = "credentials";
+    private static final String ENDPOINT = "endpoint";
+    private static final String TABLE_PREFIX = "prefix";
 
     // benchmark configuration
     private static final String DATASET = "dataset";
@@ -81,7 +79,7 @@ public class BenchmarkConfiguration
 
     // storage backend specific settings
     private final long dynamodbTps;
-    private final BackendDataModel dynamodbDataModel;
+    private final String dynamodbDataModel;
     private final boolean dynamodbConsistentRead;
 
     // shortest path
@@ -151,14 +149,13 @@ public class BenchmarkConfiguration
         this.dynamodbTps = Math.max(1, dynamodb.getLong(TPS, 750 /*default*/));
         this.dynamodbConsistentRead = dynamodb.containsKey(CONSISTENT_READ) ? dynamodb.getBoolean(CONSISTENT_READ)
             : false;
-        this.dynamodbDataModel = dynamodb.containsKey("data-model") ? BackendDataModel.valueOf(dynamodb
-            .getString("data-model")) : null;
+        this.dynamodbDataModel = dynamodb.containsKey("data-model") ? dynamodb.getString("data-model") : null;
         this.dynamodbCredentialsFqClassName = credentials.containsKey(CLASS_NAME) ? credentials.getString(CLASS_NAME)
             : null;
         this.dynamodbCredentialsCtorArguments = credentials.containsKey(CONSTRUCTOR_ARGS) ? credentials
             .getString(CONSTRUCTOR_ARGS) : null;
         this.dynamodbEndpoint = dynamodb.containsKey(ENDPOINT) ? dynamodb.getString(ENDPOINT) : null;
-        this.dynamodbTablePrefix = dynamodb.containsKey(TABLE_PREFIX) ? dynamodb.getString(TABLE_PREFIX) : Constants.DYNAMODB_TABLE_PREFIX.getDefaultValue();
+        this.dynamodbTablePrefix = dynamodb.containsKey(TABLE_PREFIX) ? dynamodb.getString(TABLE_PREFIX) : "titan";
 
         Configuration titan = socialsensor.subset(TITAN); //TODO(amcp) move dynamodb ns into titan
         bufferSize = titan.getInt(BUFFER_SIZE, GraphDatabaseConfiguration.BUFFER_SIZE.getDefaultValue());
@@ -314,7 +311,7 @@ public class BenchmarkConfiguration
         return dynamodbConsistentRead;
     }
 
-    public BackendDataModel getDynamodbDataModel()
+    public String getDynamodbDataModel()
     {
         return dynamodbDataModel;
     }
