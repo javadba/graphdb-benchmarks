@@ -13,6 +13,7 @@ import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
+import eu.socialsensor.graphdatabases.HBaseGraphDatabase;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.LineIterator;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
@@ -193,6 +194,10 @@ public class Utils
         {
             graphDatabase = new Neo4jGraphDatabase(dbStorageDirectory, batchLoading, config.getRandomNodeList(),
                     config.getShortestPathMaxHops());
+        }
+        else if (GraphDatabaseType.HBASE == type)
+        {
+            graphDatabase = new HBaseGraphDatabase(config, dbStorageDirectory);
         }
         else if (GraphDatabaseType.ORIENT_DB == type)
         {

@@ -50,9 +50,9 @@
     </scm>
 
     <properties>
-        <tinkerpop.version>3.0.1-incubating</tinkerpop.version>
+        <tinkerpop.version>3.2.3</tinkerpop.version>
         <titan.version>1.0.0</titan.version>
-        <hbase.version>1.0.2</hbase.version>
+        <hbase.version>1.2.0</hbase.version>
         <neo4j.version>2.3.2</neo4j.version>
         <dynamodb.titan.version>1.0.0</dynamodb.titan.version>
         <log4j2.version>2.1</log4j2.version>
@@ -69,7 +69,7 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>18.0</version>
+            <version>16.0.1</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -174,9 +174,14 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.github.amcp</groupId>
+            <groupId>com.michaelpollmeier</groupId>
             <artifactId>orientdb-gremlin</artifactId>
             <version>${tinkerpop.version}.0</version>
+        </dependency>
+        <dependency>
+            <groupId>io.hgraphdb</groupId>
+            <artifactId>hgraphdb</artifactId>
+            <version>0.0.1</version>
         </dependency>
     </dependencies>
     <build>
