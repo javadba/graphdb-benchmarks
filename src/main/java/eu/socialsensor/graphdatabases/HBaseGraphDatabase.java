@@ -166,7 +166,7 @@ public class HBaseGraphDatabase extends GraphDatabaseBase<Iterator<Vertex>, Iter
     public Set<Integer> getNodesFromCommunity(int community)
     {
         Set<Integer> nodes = new HashSet<Integer>();
-        for (Vertex v : graph.traversal().V().has(COMMUNITY, community).toList())
+        for (Vertex v : graph.traversal().V().has(NODE_LABEL, COMMUNITY, community).toList())
         {
             Integer nodeId = (Integer) v.property(NODE_ID).value();
             nodes.add(nodeId);
