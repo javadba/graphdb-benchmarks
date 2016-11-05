@@ -1,8 +1,8 @@
 package eu.socialsensor.insert;
 
 import eu.socialsensor.main.GraphDatabaseType;
+import io.hgraphdb.HBaseGraph;
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversal;
-import org.apache.tinkerpop.gremlin.structure.Graph;
 import org.apache.tinkerpop.gremlin.structure.T;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
 
@@ -17,9 +17,9 @@ import java.io.File;
  */
 public final class HBaseSingleInsertion extends InsertionBase<Vertex>
 {
-    protected final Graph graph;
+    protected final HBaseGraph graph;
 
-    public HBaseSingleInsertion(Graph graph, File resultsPath)
+    public HBaseSingleInsertion(HBaseGraph graph, File resultsPath)
     {
         super(GraphDatabaseType.HBASE, resultsPath);
         this.graph = graph;

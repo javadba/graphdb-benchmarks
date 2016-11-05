@@ -2,8 +2,8 @@ package eu.socialsensor.insert;
 
 import eu.socialsensor.graphdatabases.HBaseGraphDatabase;
 import eu.socialsensor.main.GraphDatabaseType;
-import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversal;
-import org.apache.tinkerpop.gremlin.structure.Graph;
+import io.hgraphdb.HBaseBulkLoader;
+import io.hgraphdb.HBaseGraph;
 import org.apache.tinkerpop.gremlin.structure.T;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
 
@@ -19,13 +19,15 @@ import java.util.Map;
  */
 public class HBaseMassiveInsertion extends InsertionBase<Vertex> implements Insertion
 {
-    private final Graph graph;
+    private final HBaseGraph graph;
+    private final HBaseBulkLoader loader;
     Map<Integer, Vertex> cache = new HashMap<Integer, Vertex>();
 
-    public HBaseMassiveInsertion(Graph graph)
+    public HBaseMassiveInsertion(HBaseGraph graph)
     {
         super(GraphDatabaseType.HBASE, null /* resultsPath */);
         this.graph = graph;
+        this.loader = new HBaseBulkLoader(graph);
     }
 
     @Override
@@ -35,7 +37,7 @@ public class HBaseMassiveInsertion extends InsertionBase<Vertex> implements Inse
         Vertex vertex = cache.get(intValue);
         if (vertex == null)
         {
-            vertex = graph.addVertex(T.label, HBaseGraphDatabase.NODE_LABEL, NODEID, intValue);
+            vertex = loader.addVertex(T.label, HBaseGraphDatabase.NODE_LABEL, NODEID, intValue);
             cache.put(intValue, vertex);
         }
         return vertex;
@@ -44,7 +46,7 @@ public class HBaseMassiveInsertion extends InsertionBase<Vertex> implements Inse
     @Override
     protected void relateNodes(Vertex src, Vertex dest)
     {
-        src.addEdge(SIMILAR, dest);
+        loader.addEdge(src, dest, SIMILAR);
     }
 
     @Override
