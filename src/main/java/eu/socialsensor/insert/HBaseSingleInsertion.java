@@ -39,7 +39,7 @@ public final class HBaseSingleInsertion extends InsertionBase<Vertex>
 
     protected Vertex getOrCreate(final String value) {
         final Integer intValue = Integer.valueOf(value);
-        final GraphTraversal<Vertex, Vertex> traversal = graph.traversal().V().hasLabel(NODE_LABEL).has(NODEID, intValue);
+        final GraphTraversal<Vertex, Vertex> traversal = graph.traversal().V().has(NODE_LABEL, NODEID, intValue);
         final Vertex vertex = traversal.hasNext() ? traversal.next() : graph.addVertex(T.label, NODE_LABEL, NODEID, intValue);
         return vertex;
     }

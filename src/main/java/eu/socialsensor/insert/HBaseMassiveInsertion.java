@@ -7,6 +7,9 @@ import org.apache.tinkerpop.gremlin.structure.Graph;
 import org.apache.tinkerpop.gremlin.structure.T;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Implementation of massive Insertion in HBase graph database
  * 
@@ -17,6 +20,7 @@ import org.apache.tinkerpop.gremlin.structure.Vertex;
 public class HBaseMassiveInsertion extends InsertionBase<Vertex> implements Insertion
 {
     private final Graph graph;
+    Map<Integer, Vertex> cache = new HashMap<Integer, Vertex>();
 
     public HBaseMassiveInsertion(Graph graph)
     {
@@ -28,8 +32,12 @@ public class HBaseMassiveInsertion extends InsertionBase<Vertex> implements Inse
     protected Vertex getOrCreate(String value)
     {
         final Integer intValue = Integer.valueOf(value);
-        final GraphTraversal<Vertex, Vertex> traversal = graph.traversal().V().hasLabel(NODE_LABEL).has(NODEID, intValue);
-        final Vertex vertex = traversal.hasNext() ? traversal.next() : graph.addVertex(T.label, HBaseGraphDatabase.NODE_LABEL, NODEID, intValue);
+        Vertex vertex = cache.get(intValue);
+        if (vertex == null)
+        {
+            vertex = graph.addVertex(T.label, HBaseGraphDatabase.NODE_LABEL, NODEID, intValue);
+            cache.put(intValue, vertex);
+        }
         return vertex;
     }
 

@@ -146,7 +146,7 @@ public class HBaseGraphDatabase extends GraphDatabaseBase<Iterator<Vertex>, Iter
     {
         Set<Integer> communities = new HashSet<Integer>();
 
-        for (Vertex vertex : graph.traversal().V().has(NODE_COMMUNITY, nodeCommunity).toList())
+        for (Vertex vertex : graph.traversal().V().has(NODE_LABEL, NODE_COMMUNITY, nodeCommunity).toList())
         {
             final Iterator<Vertex> it = vertex.vertices(Direction.OUT, SIMILAR);
             for (Vertex v; it.hasNext();)
@@ -178,7 +178,7 @@ public class HBaseGraphDatabase extends GraphDatabaseBase<Iterator<Vertex>, Iter
     public Set<Integer> getNodesFromNodeCommunity(int nodeCommunity)
     {
         Set<Integer> nodes = new HashSet<Integer>();
-        for (Vertex v : graph.traversal().V().has(NODE_COMMUNITY, nodeCommunity).toList())
+        for (Vertex v : graph.traversal().V().has(NODE_LABEL, NODE_COMMUNITY, nodeCommunity).toList())
         {
             Integer nodeId = (Integer) v.property(NODE_ID).value();
             nodes.add(nodeId);
@@ -190,8 +190,8 @@ public class HBaseGraphDatabase extends GraphDatabaseBase<Iterator<Vertex>, Iter
     public double getEdgesInsideCommunity(int vertexCommunity, int communityVertices)
     {
         double edges = 0;
-        Set<Vertex> comVertices = graph.traversal().V().has(COMMUNITY, communityVertices).toSet();
-        for (Vertex vertex : graph.traversal().V().has(NODE_COMMUNITY, vertexCommunity).toList())
+        Set<Vertex> comVertices = graph.traversal().V().has(NODE_LABEL, COMMUNITY, communityVertices).toSet();
+        for (Vertex vertex : graph.traversal().V().has(NODE_LABEL, NODE_COMMUNITY, vertexCommunity).toList())
         {
             Iterator<Vertex> it = vertex.vertices(Direction.OUT, SIMILAR);
             for (Vertex v; it.hasNext();)
@@ -209,7 +209,7 @@ public class HBaseGraphDatabase extends GraphDatabaseBase<Iterator<Vertex>, Iter
     public double getCommunityWeight(int community)
     {
         double communityWeight = 0;
-        final List<Vertex> list = graph.traversal().V().has(COMMUNITY, community).toList();
+        final List<Vertex> list = graph.traversal().V().has(NODE_LABEL, COMMUNITY, community).toList();
         if (list.size() <= 1) {
             return communityWeight;
         }
@@ -224,7 +224,7 @@ public class HBaseGraphDatabase extends GraphDatabaseBase<Iterator<Vertex>, Iter
     public double getNodeCommunityWeight(int nodeCommunity)
     {
         double nodeCommunityWeight = 0;
-        for (Vertex vertex : graph.traversal().V().has(NODE_COMMUNITY, nodeCommunity).toList())
+        for (Vertex vertex : graph.traversal().V().has(NODE_LABEL, NODE_COMMUNITY, nodeCommunity).toList())
         {
             nodeCommunityWeight += getNodeOutDegree(vertex);
         }
@@ -234,7 +234,7 @@ public class HBaseGraphDatabase extends GraphDatabaseBase<Iterator<Vertex>, Iter
     @Override
     public void moveNode(int nodeCommunity, int toCommunity)
     {
-        for (Vertex vertex : graph.traversal().V().has(NODE_COMMUNITY, nodeCommunity).toList())
+        for (Vertex vertex : graph.traversal().V().has(NODE_LABEL, NODE_COMMUNITY, nodeCommunity).toList())
         {
             vertex.property(COMMUNITY, toCommunity);
         }
@@ -272,7 +272,7 @@ public class HBaseGraphDatabase extends GraphDatabaseBase<Iterator<Vertex>, Iter
     @Override
     public int getCommunity(int nodeCommunity)
     {
-        Vertex vertex = graph.traversal().V().has(NODE_COMMUNITY, nodeCommunity).next();
+        Vertex vertex = graph.traversal().V().has(NODE_LABEL, NODE_COMMUNITY, nodeCommunity).next();
         int community = (Integer) vertex.property(COMMUNITY).value();
         return community;
     }
@@ -288,7 +288,7 @@ public class HBaseGraphDatabase extends GraphDatabaseBase<Iterator<Vertex>, Iter
     public int getCommunitySize(int community)
     {
         Set<Integer> nodeCommunities = new HashSet<Integer>();
-        for (Vertex v : graph.traversal().V().has(COMMUNITY, community).toList())
+        for (Vertex v : graph.traversal().V().has(NODE_LABEL, COMMUNITY, community).toList())
         {
             int nodeCommunity = (Integer) v.property(NODE_COMMUNITY).value();
             if (!nodeCommunities.contains(nodeCommunity))
@@ -305,7 +305,7 @@ public class HBaseGraphDatabase extends GraphDatabaseBase<Iterator<Vertex>, Iter
         Map<Integer, List<Integer>> communities = new HashMap<Integer, List<Integer>>();
         for (int i = 0; i < numberOfCommunities; i++)
         {
-            GraphTraversal<Vertex, Vertex> t = graph.traversal().V().has(COMMUNITY, i);
+            GraphTraversal<Vertex, Vertex> t = graph.traversal().V().has(NODE_LABEL, COMMUNITY, i);
             List<Integer> vertices = new ArrayList<Integer>();
             while (t.hasNext())
             {
@@ -423,7 +423,7 @@ public class HBaseGraphDatabase extends GraphDatabaseBase<Iterator<Vertex>, Iter
     public Vertex getVertex(Integer i)
     {
         final GraphTraversalSource g = graph.traversal();
-        final Vertex vertex = g.V().has(NODE_ID, i).next();
+        final Vertex vertex = g.V().has(NODE_LABEL, NODE_ID, i).next();
         return vertex;
     }
 }
