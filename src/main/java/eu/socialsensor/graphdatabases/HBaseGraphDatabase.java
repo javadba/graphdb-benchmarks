@@ -87,7 +87,10 @@ public class HBaseGraphDatabase extends GraphDatabaseBase<Iterator<Vertex>, Iter
     @Override
     public void shortestPath(final Vertex v1, Integer i)
     {
+        @SuppressWarnings("unused")
         final Vertex v2 = getVertex(i);
+
+        // TODO missing use of v1
     }
 
     @Override
