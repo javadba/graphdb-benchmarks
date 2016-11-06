@@ -52,5 +52,6 @@ public class HBaseMassiveInsertion extends InsertionBase<Vertex> implements Inse
     @Override
     protected void post()
     {
+        loader.close();
     }
 }

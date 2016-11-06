@@ -21,6 +21,7 @@ public class GraphDatabaseBenchmarkTest
         }
         catch (AssertionError e)
         {
+            e.printStackTrace();
             fail("Got unexpected exception: " + e.getMessage());
         }
 

@@ -1,5 +1,6 @@
 package eu.socialsensor.graphdatabases;
 
+import com.google.common.base.Stopwatch;
 import com.google.common.collect.Iterators;
 import eu.socialsensor.insert.HBaseMassiveInsertion;
 import eu.socialsensor.insert.HBaseSingleInsertion;
@@ -13,14 +14,19 @@ import io.hgraphdb.IndexType;
 import io.hgraphdb.OperationType;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.tinkerpop.gremlin.process.traversal.Path;
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversal;
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversalSource;
+import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__;
 import org.apache.tinkerpop.gremlin.structure.Direction;
 import org.apache.tinkerpop.gremlin.structure.Edge;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
 
 import java.io.File;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 /**
@@ -31,6 +37,8 @@ import java.util.function.Consumer;
  */
 public class HBaseGraphDatabase extends GraphDatabaseBase<Iterator<Vertex>, Iterator<Edge>, Vertex, Edge>
 {
+
+    private static final Logger LOG = LogManager.getLogger();
 
     public static final String UNIQUE_HASH_INDEX = "UNIQUE_HASH_INDEX";
     public static final String NOTUNIQUE_HASH_INDEX = "NOTUNIQUE_HASH_INDEX";
@@ -85,12 +93,36 @@ public class HBaseGraphDatabase extends GraphDatabaseBase<Iterator<Vertex>, Iter
     }
 
     @Override
-    public void shortestPath(final Vertex v1, Integer i)
+    public void shortestPath(final Vertex fromNode, Integer targetNode)
     {
-        @SuppressWarnings("unused")
-        final Vertex v2 = getVertex(i);
+        final GraphTraversalSource g = graph.traversal();
+        final Stopwatch watch = Stopwatch.createStarted();
+        final DepthPredicate maxDepth = new DepthPredicate(maxHops);
+        final Integer fromNodeId = fromNode.<Integer>value(NODE_ID);
+        LOG.trace("finding path from {} to {} max hops {}", fromNodeId, targetNode, maxHops);
+        final GraphTraversal<?, Path> t =
+                g.V().has(NODE_LABEL, NODE_ID, fromNodeId)
+                        .repeat(
+                                __.out(SIMILAR)
+                                        .simplePath())
+                        .until(
+                                __.has(NODE_LABEL, NODE_ID, targetNode)
+                                        .and(__.filter( maxDepth ))
+                        )
+                        .limit(1)
+                        .path();
 
-        // TODO missing use of v1
+        t.tryNext()
+                .ifPresent( it -> {
+                    final int pathSize = it.size();
+                    final long elapsed = watch.elapsed(TimeUnit.MILLISECONDS);
+                    watch.stop();
+                    if(elapsed > 2000) { //threshold for debugging
+                        LOG.warn("from @ " + fromNode.value(NODE_ID) +
+                                " to @ " + targetNode.toString() +
+                                " took " + elapsed + " ms, " + pathSize + ": " + it.toString());
+                    }
+                });
     }
 
     @Override
