@@ -371,13 +371,27 @@ public class HBaseGraphDatabase extends GraphDatabaseBase<Iterator<Vertex>, Iter
     {
         HBaseGraphConfiguration config = new HBaseGraphConfiguration()
                 .setGraphNamespace(dbPath.getName())
-                .setCreateTables(true);
+                .setCreateTables(true)
+                .setLazyLoading(true);
         if (useMock) {
             config.setInstanceType(HBaseGraphConfiguration.InstanceType.MOCK);
         } else {
+            config.setInstanceType(HBaseGraphConfiguration.InstanceType.DISTRIBUTED);
             config.setProperty("hbase.zookeeper.quorum", "127.0.0.1");
             config.setProperty("zookeeper.znode.parent", "/hbase-unsecure");
-            config.setInstanceType(HBaseGraphConfiguration.InstanceType.DISTRIBUTED);
+            /*
+            config.setProperty("hbase.zookeeper.quorum", "stagehbase-2.az1.dm2.yammer.com,stagehbase-2.az2.dm2.yammer.com,stagehbase-2.az3.dm2.yammer.com");
+            config.setProperty("zookeeper.znode.parent", "/hbase-secure");
+            config.setRegionCount(128);
+            config.setCompressionAlgorithm("snappy");
+            config.setProperty("hbase.security.authentication", "kerberos");
+            config.setProperty("hadoop.security.authentication",  "kerberos");
+            config.setProperty("hbase.master.kerberos.principal",  "hbase/_HOST@STAGEHBASE.DM2.YAMMER.COM");
+            config.setProperty("hbase.regionserver.kerberos.principal",  "hbase/_HOST@STAGEHBASE.DM2.YAMMER.COM");
+            config.setProperty("hbase.client.kerberos.principal",  "hbase-stagehbasedm2@STAGEHBASE.DM2.YAMMER.COM");
+            config.setProperty("hbase.client.keytab.file",  "/etc/security/keytabs/hbase.headless.keytab");
+            config.setProperty("hbase.rpc.protection",  "authentication");
+            */
         }
         return new HBaseGraph(config);
     }
