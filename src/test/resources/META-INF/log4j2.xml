@@ -10,7 +10,7 @@
         <Logger name="com.thinkaurelius.titan.diskstorage.log.kcvs.KCVSLog" level="WARN"/>
         <Logger name="com.thinkaurelius.titan.diskstorage.Backend" level="WARN"/>
         <Logger name="com.thinkaurelius.titan.graphdb.configuration.GraphDatabaseConfiguration" level="WARN"/>
-        <Logger name="io.hgraphdb.models" level="DEBUG"/>
+        <Logger name="io.hgraphdb.models" level="TRACE"/>
         <Root level="info">
             <AppenderRef ref="Console"/>
         </Root>
