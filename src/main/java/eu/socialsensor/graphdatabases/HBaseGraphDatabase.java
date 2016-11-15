@@ -360,7 +360,7 @@ public class HBaseGraphDatabase extends GraphDatabaseBase<Iterator<Vertex>, Iter
     }
 
     private void createIndex(String key, String label) {
-        if (graph.hasIndex(IndexType.VERTEX, label, key)) {
+        if (graph.hasIndex(OperationType.READ, IndexType.VERTEX, label, key)) {
             return;
         }
         graph.createIndex(IndexType.VERTEX, label, key);
