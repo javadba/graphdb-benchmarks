@@ -8,9 +8,9 @@ import eu.socialsensor.insert.Insertion;
 import eu.socialsensor.main.BenchmarkConfiguration;
 import eu.socialsensor.main.GraphDatabaseType;
 import eu.socialsensor.utils.Utils;
+import io.hgraphdb.ElementType;
 import io.hgraphdb.HBaseGraph;
 import io.hgraphdb.HBaseGraphConfiguration;
-import io.hgraphdb.IndexType;
 import io.hgraphdb.OperationType;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.PropertiesConfiguration;
@@ -360,10 +360,10 @@ public class HBaseGraphDatabase extends GraphDatabaseBase<Iterator<Vertex>, Iter
     }
 
     private void createIndex(String key, String label) {
-        if (graph.hasIndex(OperationType.READ, IndexType.VERTEX, label, key)) {
+        if (graph.hasIndex(OperationType.READ, ElementType.VERTEX, label, key)) {
             return;
         }
-        graph.createIndex(IndexType.VERTEX, label, key);
+        graph.createIndex(ElementType.VERTEX, label, key);
     }
 
     private static final boolean useMock = false;
